@@ -1,0 +1,8 @@
+{
+  "name": "qqfo-magic-wardrobe",
+  "private": true,
+  "version": "0.1.0",
+  "description": "幻想魔法衣橱微信小程序",
+  "scripts": { "test": "node --test tests/*.test.js" },
+  "engines": { "node": ">=20" }
+}

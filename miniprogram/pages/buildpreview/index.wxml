@@ -1,0 +1,69 @@
+<view class="preview-page">
+  <view class="page-heading">装备属性预览</view>
+  <view class="profession-list" role="tablist" aria-label="选择职业">
+    <button wx:for="{{professions}}" wx:key="key" class="profession {{profession === item.key ? 'profession-active' : ''}}" data-key="{{item.key}}" bindtap="selectProfession" disabled="{{loading || loadError}}" role="tab" aria-selected="{{profession === item.key}}">{{item.label}}</button>
+  </view>
+
+  <view wx:if="{{loadError}}" class="notice error-notice">
+    <text>暂时无法读取已保存的属性。</text>
+    <button bindtap="loadProfiles">重新读取</button>
+  </view>
+  <view wx:else class="status-note" aria-live="polite">{{loading ? '正在读取属性…' : (ready ? professionLabel + ' · 裸装属性已保存，可选择装备' : '先输入裸装属性，即可开始搭配装备')}}</view>
+
+  <view class="equipment-layout">
+    <view class="equipment-column">
+      <button wx:for="{{leftSlots}}" wx:key="key" class="equipment-slot {{!ready ? 'equipment-locked' : ''}}" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError}}" aria-label="{{item.label}}">
+        <image class="equipment-icon" src="/images/wardrobe/{{item.key}}.jpg" mode="aspectFit" />
+        <text>{{item.label}}</text>
+      </button>
+    </view>
+    <view class="portrait" aria-label="人物预览背景">
+      <image class="portrait-art" src="/images/wardrobe/cloud-panel.jpg" mode="aspectFill" />
+      <view class="portrait-inner-border"></view>
+    </view>
+    <view class="equipment-column">
+      <button wx:for="{{rightSlots}}" wx:key="key" class="equipment-slot {{!ready ? 'equipment-locked' : ''}}" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError}}" aria-label="{{item.label}}">
+        <image class="equipment-icon" src="/images/wardrobe/{{item.key}}.jpg" mode="aspectFit" />
+        <text>{{item.label}}</text>
+      </button>
+    </view>
+  </view>
+
+  <view class="stats-panel combat-panel" aria-label="战斗属性">
+    <view wx:for="{{combatRows}}" wx:key="key" class="stat-row">
+      <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="stat-cell"><text class="stat-label">{{cell.label}}</text><text class="stat-value">{{cell.value}}</text></view>
+    </view>
+  </view>
+  <view class="badges" aria-label="六枚徽章">
+    <image wx:for="{{badges}}" wx:key="*this" class="badge {{!ready ? 'badge-locked' : ''}}" src="/images/wardrobe/badge-{{item}}.jpg" mode="aspectFit" />
+  </view>
+  <view class="stats-panel core-panel" aria-label="基础属性">
+    <view wx:for="{{coreRows}}" wx:key="key" class="stat-row">
+      <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="stat-cell"><text class="stat-label">{{cell.label}}</text><text class="stat-value">{{cell.value}}</text></view>
+    </view>
+  </view>
+  <view class="preview-footer">
+    <button class="artifact equipment-slot {{!ready ? 'equipment-locked' : ''}}" data-key="artifact" data-label="法宝" bindtap="selectEquipment" disabled="{{!ready || loading || loadError}}"><image class="equipment-icon" src="/images/wardrobe/artifact.jpg" mode="aspectFit" /><text>法宝</text></button>
+    <button class="base-entry" bindtap="openBaseDialog" disabled="{{loading || loadError}}">输入裸装属性</button>
+  </view>
+
+  <view wx:if="{{dialogOpen}}" class="modal-overlay" style="bottom: {{keyboardHeight}}px;" catchtouchmove="stopTouchMove">
+    <view class="modal" role="dialog" aria-modal="true" aria-label="输入裸装属性">
+      <view class="modal-header"><view><view class="modal-title">输入裸装属性</view><view class="modal-subtitle">{{professionLabel}} · 无装备、无宠物的面板数值</view></view><button class="close-button" bindtap="closeBaseDialog" disabled="{{saving}}" aria-label="关闭输入窗口">×</button></view>
+      <scroll-view scroll-y scroll-into-view="{{fieldScrollTarget}}" class="modal-fields" enhanced show-scrollbar="{{false}}" bounces="{{false}}">
+        <view class="fields-grid">
+          <view wx:for="{{fields}}" wx:key="key" id="field-row-{{item.key}}" class="field">
+            <label class="field-label" for="field-{{item.key}}">{{item.label}}</label>
+            <input id="field-{{item.key}}" class="stat-input" type="digit" value="{{item.value}}" placeholder="请输入数值" placeholder-class="input-placeholder" data-key="{{item.key}}" bindinput="onFieldInput" bindfocus="onFieldFocus" bindkeyboardheightchange="onKeyboardChange" disabled="{{saving}}" maxlength="20" cursor-spacing="20" adjust-position="{{false}}" aria-label="{{item.label}}" />
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <text wx:if="{{saveError}}" class="save-error" role="alert">{{saveError}}</text>
+        <text wx:elif="{{invalidCount}}" class="save-error" role="alert">有 {{invalidCount}} 项格式无效，请填写有效的非负数值。</text>
+        <text wx:else class="form-progress">{{filledCount}} / 12 项已填写 · 数值为 0 时请填 0</text>
+        <button class="confirm-button" bindtap="confirmBase" loading="{{saving}}" disabled="{{!canConfirm || saving}}">{{saving ? '正在保存' : '确认'}}</button>
+      </view>
+    </view>
+  </view>
+</view>

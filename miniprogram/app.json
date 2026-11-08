@@ -1,13 +1,14 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/buildpreview/index",
     "pages/example/index"
   ],
   "window": {
-    "backgroundColor": "#F6F6F6",
+    "backgroundColor": "#faf3e7",
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#F6F6F6",
-    "navigationBarTitleText": "云开发 QuickStart",
+    "navigationBarBackgroundColor": "#faf3e7",
+    "navigationBarTitleText": "幻想魔法衣橱",
     "navigationBarTextStyle": "black"
   },
   "sitemapLocation": "sitemap.json",

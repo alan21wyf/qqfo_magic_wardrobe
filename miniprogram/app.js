@@ -7,6 +7,7 @@ App({
       // 此处请填入环境 ID, 环境 ID 可在微信开发者工具右上顶部工具栏点击云开发按钮打开获取
       env: "",
     };
+    if (!this.globalData.env) return;
     if (!wx.cloud) {
       console.error("请使用 2.2.3 或以上的基础库以使用云能力");
     } else {

@@ -1,29 +1,17 @@
-<!--index.wxml-->
-<view class="container">
-  <view class="title">快速了解云开发</view>
-  <view class="top_tip">免鉴权接口调用 免部署后台 高并发</view>
-  <view class="power" wx:key="title" wx:for="{{powerList}}" wx:for-item="power">
-    <view class="power_info" data-index="{{index}}" data-type="{{ power.type }}" bindtap="onClickPowerInfo">
-      <view class="power_info_text">
-        <view class="power_info_text_title">
-          {{power.title}}
-          <view class="power_info_text_tag" wx:if="{{power.tag}}">{{power.tag}}</view>
-        </view>
-        <view class="power_info_text_tip">{{power.tip}}</view>
-      </view>
-      <image wx:if="{{!power.showItem && power.item.length}}" class="power_info_more" src="../../images/arrow.svg"></image>
-      <image wx:if="{{power.showItem && power.item.length}}" class="power_info_less" src="../../images/arrow.svg"></image>
-      <image wx:if="{{!power.item.length}}" class="power_item_icon" src="../../images/arrow.svg"></image>
-    </view>
-    <view wx:if="{{power.showItem}}">
-      <view wx:key="title" wx:for="{{power.item}}">
-        <view class="line"></view>
-        <view class="power_item" bindtap="jumpPage" data-type="{{ item.type }}" data-page="{{item.page}}">
-          <view class="power_item_title">{{item.title}}</view>
-          <image class="power_item_icon" src="../../images/arrow.svg"></image>
-        </view>
-      </view>
+<view class="home-page">
+  <image class="home-hero" src="/images/wardrobe/home-hero.jpg" mode="widthFix" aria-label="天都魔法衣橱与整理领带的火鸟" />
+  <view class="home-actions">
+    <button class="entry entry-primary" bindtap="openBuildPreview" hover-class="entry-pressed" aria-label="装备属性试穿">
+      <image class="entry-icon" src="/images/wardrobe/helmet.jpg" mode="aspectFit" />
+      <text class="entry-label">装备属性试穿</text><text class="entry-arrow">›</text>
+    </button>
+    <button class="entry entry-secondary" bindtap="showComingSoon" data-label="时装试穿" hover-class="entry-pressed">
+      <image class="entry-icon" src="/images/wardrobe/robe.jpg" mode="aspectFit" />
+      <text class="entry-label">时装试穿</text><text class="entry-arrow">›</text>
+    </button>
+    <view class="secondary-actions">
+      <button class="small-entry mbti-entry" bindtap="showComingSoon" data-label="幻想MBTI测试" hover-class="entry-pressed">幻想MBTI测试</button>
+      <button class="small-entry placeholder-entry" disabled>敬请期待</button>
     </view>
   </view>
-  <cloud-tip-modal showTipProps="{{showTip}}" title="{{title}}" content="{{content}}"></cloud-tip-modal>
 </view>
