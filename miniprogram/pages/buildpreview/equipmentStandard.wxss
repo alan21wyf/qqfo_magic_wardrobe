@@ -1,0 +1,5 @@
+page { height: 100%; overflow: hidden; background: #f7f3e9; }
+.equipment-standard-page { display: flex; flex-direction: column; width: 100%; max-width: 680px; height: 100vh; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }
+.standard-guidance { flex: none; padding: 14px 16px; color: #314c43; background: #f7f3e9; font-size: 15px; line-height: 1.8; border-bottom: 1px solid #dfdccb; }
+.standard-image-scroll { flex: 1; height: 0; min-height: 0; width: 100%; }
+.standard-example-image { display: block; width: 100%; height: auto; }

@@ -4,6 +4,11 @@
     "pages/buildpreview/index",
     "pages/example/index"
   ],
+  "subpackages": [
+    { "root": "equipment-examples/armor", "name": "upload-examples-armor", "pages": ["index"] },
+    { "root": "equipment-examples/accessories", "name": "upload-examples-accessories", "pages": ["index"] },
+    { "root": "equipment-examples/gear", "name": "upload-examples-gear", "pages": ["index"] }
+  ],
   "window": {
     "backgroundColor": "#faf3e7",
     "backgroundTextStyle": "light",

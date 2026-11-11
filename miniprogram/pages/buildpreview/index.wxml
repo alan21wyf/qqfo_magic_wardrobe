@@ -1,50 +1,99 @@
-<view class="preview-page">
-  <view class="page-heading">装备属性预览</view>
+<view class="preview-page {{layoutWide ? 'layout-wide' : ''}} {{layoutStacked ? 'layout-stacked' : ''}} {{layoutLandscape ? 'layout-landscape' : ''}}" style="{{layoutStyle}}">
   <view class="profession-list" role="tablist" aria-label="选择职业">
-    <button wx:for="{{professions}}" wx:key="key" class="profession {{profession === item.key ? 'profession-active' : ''}}" data-key="{{item.key}}" bindtap="selectProfession" disabled="{{loading || loadError}}" role="tab" aria-selected="{{profession === item.key}}">{{item.label}}</button>
+    <button wx:for="{{professions}}" wx:key="key" class="profession {{profession === item.key ? 'profession-active' : ''}}" data-key="{{item.key}}" bindtap="selectProfession" disabled="{{loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" role="tab" aria-selected="{{profession === item.key}}">{{item.label}}</button>
   </view>
 
   <view wx:if="{{loadError}}" class="notice error-notice">
     <text>暂时无法读取已保存的属性。</text>
     <button bindtap="loadProfiles">重新读取</button>
   </view>
-  <view wx:else class="status-note" aria-live="polite">{{loading ? '正在读取属性…' : (ready ? professionLabel + ' · 裸装属性已保存，可选择装备' : '先输入裸装属性，即可开始搭配装备')}}</view>
+  <view wx:else class="status-note" aria-live="polite">{{loading ? '正在读取属性…' : (ready ? professionLabel + ' · 已录入 ' + recordedCount + ' · 参与计算 ' + equippedCount : '先输入裸装属性，再搭配装备')}}</view>
 
   <view class="equipment-layout">
     <view class="equipment-column">
-      <button wx:for="{{leftSlots}}" wx:key="key" class="equipment-slot {{!ready ? 'equipment-locked' : ''}}" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError}}" aria-label="{{item.label}}">
+      <button wx:for="{{leftSlots}}" wx:key="key" class="equipment-slot {{!ready ? 'equipment-locked' : ''}} {{item.inactive ? 'equipment-inactive' : ''}}" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-label="{{item.label}}">
         <image class="equipment-icon" src="/images/wardrobe/{{item.key}}.jpg" mode="aspectFit" />
-        <text>{{item.label}}</text>
+        <text>{{item.label}}</text><text wx:if="{{item.filled}}" class="slot-indicator">{{item.inactive ? '已取下' : '已录入'}}</text>
       </button>
     </view>
     <view class="portrait" aria-label="人物预览背景">
       <image class="portrait-art" src="/images/wardrobe/cloud-panel.jpg" mode="aspectFill" />
       <view class="portrait-inner-border"></view>
+      <view class="equipment-mode-controls" aria-label="装备操作">
+        <button class="equipment-mode-button {{equipmentMode === 'edit' ? 'mode-selected' : ''}}" data-mode="edit" bindtap="setEquipmentMode" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-pressed="{{equipmentMode === 'edit'}}">录入装备</button>
+        <button wx:if="{{profession === 'mage'}}" class="equipment-mode-button" bindtap="openEquipmentPresets" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}">选择预设装备</button>
+        <button class="equipment-mode-button {{equipmentMode === 'takeoff' ? 'mode-selected' : ''}}" data-mode="takeoff" bindtap="setEquipmentMode" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-pressed="{{equipmentMode === 'takeoff'}}">取下装备</button>
+        <button class="equipment-mode-button future-mode-button" disabled="{{true}}" aria-label="保存当前装备，功能待开放">保存当前装备</button>
+        <button class="equipment-mode-button future-mode-button" disabled="{{true}}" aria-label="分享，功能待开放">分享</button>
+        <button class="equipment-mode-button clear-mode-button {{equipmentMode === 'clear' ? 'mode-selected' : ''}}" data-mode="clear" bindtap="setEquipmentMode" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-pressed="{{equipmentMode === 'clear'}}">清除装备</button>
+      </view>
     </view>
     <view class="equipment-column">
-      <button wx:for="{{rightSlots}}" wx:key="key" class="equipment-slot {{!ready ? 'equipment-locked' : ''}}" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError}}" aria-label="{{item.label}}">
+      <button wx:for="{{rightSlots}}" wx:key="key" class="equipment-slot {{!ready ? 'equipment-locked' : ''}} {{item.inactive ? 'equipment-inactive' : ''}}" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-label="{{item.label}}">
         <image class="equipment-icon" src="/images/wardrobe/{{item.key}}.jpg" mode="aspectFit" />
-        <text>{{item.label}}</text>
+        <text>{{item.label}}</text><text wx:if="{{item.filled}}" class="slot-indicator">{{item.inactive ? '已取下' : '已录入'}}</text>
       </button>
     </view>
   </view>
 
-  <view class="stats-panel combat-panel" aria-label="战斗属性">
-    <view wx:for="{{combatRows}}" wx:key="key" class="stat-row">
-      <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="stat-cell"><text class="stat-label">{{cell.label}}</text><text class="stat-value">{{cell.value}}</text></view>
+  <view wx:if="{{calculationError}}" class="notice error-notice">{{calculationError}}</view>
+  <view class="badges" aria-label="六枚徽章和法宝">
+    <button wx:for="{{badges}}" wx:key="key" class="badge-button {{!ready ? 'badge-locked' : ''}} {{item.filled ? 'slot-filled' : ''}} {{item.inactive ? 'equipment-inactive' : ''}}" data-key="{{item.key}}" bindtap="selectEquipment" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-label="{{item.label}}"><image class="badge" src="/images/wardrobe/badge-{{item.n}}.jpg" mode="aspectFit" /><text class="badge-label">{{item.label}}</text><text wx:if="{{item.filled}}" class="slot-indicator">{{item.inactive ? '已取下' : '已录入'}}</text></button>
+    <button class="badge-button artifact-button {{!ready ? 'badge-locked' : ''}} {{artifactFilled ? 'slot-filled' : ''}} {{artifactInactive ? 'equipment-inactive' : ''}}" data-key="artifact" bindtap="selectEquipment" disabled="{{!ready || loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}" aria-label="法宝"><image class="badge" src="/images/wardrobe/artifact.jpg" mode="aspectFit" /><text class="badge-label">法宝</text><text wx:if="{{artifactFilled}}" class="slot-indicator">{{artifactInactive ? '已取下' : '已录入'}}</text></button>
+  </view>
+  <view class="vital-stats"><view wx:for="{{vitalRows}}" wx:key="key"><text>{{item.label}}</text><text class="vital-value">{{item.value}}</text></view></view>
+  <view class="attribute-panels">
+    <view class="stats-panel combat-panel" aria-label="战斗属性">
+      <view wx:for="{{combatRows}}" wx:key="key" class="stat-row">
+        <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="stat-cell"><text class="stat-label">{{cell.label}}</text><text class="stat-value">{{cell.value}}</text></view>
+      </view>
     </view>
-  </view>
-  <view class="badges" aria-label="六枚徽章">
-    <image wx:for="{{badges}}" wx:key="*this" class="badge {{!ready ? 'badge-locked' : ''}}" src="/images/wardrobe/badge-{{item}}.jpg" mode="aspectFit" />
-  </view>
-  <view class="stats-panel core-panel" aria-label="基础属性">
-    <view wx:for="{{coreRows}}" wx:key="key" class="stat-row">
-      <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="stat-cell"><text class="stat-label">{{cell.label}}</text><text class="stat-value">{{cell.value}}</text></view>
+    <view class="stats-panel core-panel" aria-label="基础属性">
+      <view wx:for="{{coreRows}}" wx:key="key" class="stat-row">
+        <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="stat-cell"><text class="stat-label">{{cell.label}}</text><text class="stat-value">{{cell.value}}</text></view>
+      </view>
     </view>
   </view>
   <view class="preview-footer">
-    <button class="artifact equipment-slot {{!ready ? 'equipment-locked' : ''}}" data-key="artifact" data-label="法宝" bindtap="selectEquipment" disabled="{{!ready || loading || loadError}}"><image class="equipment-icon" src="/images/wardrobe/artifact.jpg" mode="aspectFit" /><text>法宝</text></button>
-    <button class="base-entry" bindtap="openBaseDialog" disabled="{{loading || loadError}}">输入裸装属性</button>
+    <button class="base-entry" bindtap="openBaseDialog" disabled="{{loading || loadError || equipmentBusy || clearConfirmationOpen || presetOpen}}">输入裸装属性</button>
+  </view>
+  <view wx:if="{{ready}}" class="extra-stats"><text wx:for="{{extraStats}}" wx:key="key">{{item.label}} {{item.value}}</text></view>
+
+<view wx:if="{{takeoffHintVisible}}" class="takeoff-hint {{takeoffHintFading ? 'takeoff-hint-fading' : ''}}" role="status">点击装备取下，再次点击重新装备</view>
+
+  <view wx:if="{{presetOpen}}" class="modal-overlay preset-overlay" catchtouchmove="stopTouchMove">
+    <view class="modal preset-modal" role="dialog" aria-modal="true" aria-label="{{presetStage === 'confirm' ? '确认预设装备' : '选择预设装备'}}">
+      <view class="preset-notice">{{presetNotice}}</view>
+      <view class="modal-header"><view><view class="modal-title">{{presetStage === 'confirm' ? '确认预设装备' : '选择预设装备'}}</view><view class="modal-subtitle">{{presetStage === 'confirm' ? presetSelectedLevel + '级术士装备' : '术士 · 飞升后装备'}}</view></view><button class="close-button" bindtap="closeEquipmentPresets" disabled="{{equipmentBusy}}" aria-label="关闭预设窗口">×</button></view>
+      <scroll-view wx:if="{{presetStage === 'levels'}}" scroll-y class="preset-content" enhanced show-scrollbar="{{false}}">
+        <view class="preset-description">选择等级后可查看各件装备，确认后载入。灵、灵变、变装及名器之魂需手动录入，已有内容会保留。</view>
+        <view class="preset-level-grid">
+          <button wx:for="{{presetLevels}}" wx:key="level" class="preset-level {{item.available ? 'preset-available' : ''}}" data-level="{{item.level}}" bindtap="chooseEquipmentPreset" disabled="{{!item.available || equipmentBusy}}" aria-label="{{item.level + '级' + (item.available ? '，预览装备本体' : '，待录入')}}"><text class="preset-level-number">{{item.level}}</text><text class="preset-level-state">{{item.available ? '可预览' : '待录入'}}</text></button>
+        </view>
+        <view class="preset-caption">目前已提供 102 级预设；其他等级待补充。</view>
+      </scroll-view>
+      <scroll-view wx:else scroll-y class="preset-confirm-content" enhanced show-scrollbar="{{false}}">
+        <view class="preset-description">点击装备图标查看属性，确认后替换九件装备本体。已有灵、灵变、变装及名器之魂会保留。</view>
+        <view class="preset-equipment-grid">
+          <button wx:for="{{presetItems}}" wx:key="slot" class="preset-equipment-card" data-slot="{{item.slot}}" bindtap="openPresetEquipment" disabled="{{equipmentBusy}}" aria-label="{{'查看' + item.label + '属性'}}"><image class="preset-equipment-icon" src="{{item.icon}}" mode="aspectFit" /><text>{{item.label}}</text></button>
+        </view>
+      </scroll-view>
+      <view wx:if="{{equipmentBusy || presetError}}" class="preset-feedback" role="status"><text wx:if="{{presetError}}" class="save-error">{{presetError}}</text><text wx:else>正在载入装备…</text></view>
+      <view wx:if="{{presetStage === 'confirm'}}" class="preset-confirm-footer">
+        <button class="preset-back-button" bindtap="backToPresetLevels" disabled="{{equipmentBusy}}">返回选等级</button>
+        <button class="confirm-button" bindtap="confirmEquipmentPreset" loading="{{equipmentBusy}}" disabled="{{equipmentBusy}}">{{equipmentBusy ? '正在载入' : '确认载入'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{presetOpen && presetDetail}}" class="preset-detail-overlay" bindtap="closePresetEquipment" catchtouchmove="stopTouchMove">
+    <view class="preset-tooltip" catchtap="stopTouchMove" role="dialog" aria-modal="true" aria-label="{{presetDetail.name + '属性'}}">
+      <view class="preset-tooltip-header"><view><view class="preset-tooltip-title">{{presetDetail.name}}</view><view class="preset-tooltip-slot">{{presetDetail.label}}</view></view><button class="preset-tooltip-close" bindtap="closePresetEquipment" aria-label="关闭装备属性">×</button></view>
+      <scroll-view scroll-y class="preset-tooltip-content" enhanced show-scrollbar="{{false}}">
+        <view class="preset-tooltip-base"><view class="preset-tooltip-heading">装备自带基础属性</view><view wx:for="{{presetDetail.intrinsicRows}}" wx:key="id" class="preset-attribute-row">{{item.text}}</view></view>
+        <view class="preset-tooltip-refinement"><view class="preset-tooltip-heading">炼化属性</view><view wx:for="{{presetDetail.refinementRows}}" wx:key="id" class="preset-attribute-row">{{item.text}}</view></view>
+      </scroll-view>
+    </view>
   </view>
 
   <view wx:if="{{dialogOpen}}" class="modal-overlay" style="bottom: {{keyboardHeight}}px;" catchtouchmove="stopTouchMove">
@@ -56,14 +105,140 @@
             <label class="field-label" for="field-{{item.key}}">{{item.label}}</label>
             <input id="field-{{item.key}}" class="stat-input" type="digit" value="{{item.value}}" placeholder="请输入数值" placeholder-class="input-placeholder" data-key="{{item.key}}" bindinput="onFieldInput" bindfocus="onFieldFocus" bindkeyboardheightchange="onKeyboardChange" disabled="{{saving}}" maxlength="20" cursor-spacing="20" adjust-position="{{false}}" aria-label="{{item.label}}" />
           </view>
+          <view id="field-row-measuredMp" class="field mana-calibration-field">
+            <label class="field-label" for="field-measuredMp">裸装最大法力（选填）</label>
+            <input id="field-measuredMp" class="stat-input" type="number" value="{{measuredMpDraft}}" placeholder="游戏实测值，留空按精神估算" placeholder-class="input-placeholder" data-key="measuredMp" bindinput="onMeasuredMpInput" bindfocus="onFieldFocus" bindkeyboardheightchange="onKeyboardChange" disabled="{{saving}}" maxlength="16" cursor-spacing="20" adjust-position="{{false}}" aria-label="裸装最大法力校准值，选填" />
+            <text class="mana-calibration-hint">填写可校准换装后的法力。修改裸装精神时，请重新填写对应实测值。</text>
+          </view>
         </view>
       </scroll-view>
       <view class="modal-footer">
         <text wx:if="{{saveError}}" class="save-error" role="alert">{{saveError}}</text>
         <text wx:elif="{{invalidCount}}" class="save-error" role="alert">有 {{invalidCount}} 项格式无效，请填写有效的非负数值。</text>
+        <text wx:elif="{{measuredMpInvalid}}" class="save-error" role="alert">实测最大法力请填写非负整数，或留空使用估算。</text>
         <text wx:else class="form-progress">{{filledCount}} / 12 项已填写 · 数值为 0 时请填 0</text>
         <button class="confirm-button" bindtap="confirmBase" loading="{{saving}}" disabled="{{!canConfirm || saving}}">{{saving ? '正在保存' : '确认'}}</button>
       </view>
     </view>
   </view>
+
+  <view wx:if="{{equipmentOpen}}" class="modal-overlay equipment-overlay" style="bottom: {{equipmentKeyboardHeight}}px;" catchtouchmove="stopTouchMove">
+    <view class="modal equipment-modal" role="dialog" aria-modal="true" aria-label="{{equipmentTitle}}">
+      <view class="modal-header">
+        <view><view class="modal-title">{{equipmentTitle}}</view><view class="modal-subtitle">{{professionLabel}} · {{equipmentConfig.badge ? '徽章本体属性参与整套加成' : '按来源录入，实时查看本件提升'}}</view></view>
+        <button class="close-button" bindtap="closeEquipmentDialog" disabled="{{equipmentSaving}}" aria-label="关闭装备窗口">×</button>
+      </view>
+      <scroll-view scroll-y class="equipment-fields" scroll-into-view="{{equipmentFieldTarget}}" enhanced show-scrollbar="{{false}}">
+        <view class="equipment-form-content">
+          <input class="equipment-name" value="{{equipmentName}}" bindinput="onEquipmentName" maxlength="40" placeholder="装备名称（选填）" disabled="{{equipmentSaving || recognizing}}" />
+          <view class="upload-actions">
+            <button class="upload-button" bindtap="uploadEquipmentImage" loading="{{recognizing}}" disabled="{{equipmentSaving || recognizing}}">{{recognizing ? '正在识别' : '上传装备图片'}}</button>
+            <button class="standard-link" bindtap="openEquipmentHelp">查看上传图片标准</button>
+          </view>
+          <view wx:if="{{equipmentImage}}" class="recognized-image-row">
+            <image src="{{equipmentImage}}" mode="aspectFit" class="recognized-thumb" bindtap="previewEquipmentImage" />
+            <text>{{recognitionNote}}</text>
+          </view>
+          <view wx:elif="{{recognitionNote}}" class="recognition-note">{{recognitionNote}}</view>
+          <view wx:if="{{ocrPending.length}}" class="ocr-pending">
+            <view class="section-heading">请确认这些词条的来源</view>
+            <view wx:for="{{ocrPending}}" wx:key="id" class="pending-group">
+              <text>{{item.title}}</text><text class="pending-values">{{item.previewLabel}}</text>
+              <picker range="{{item.sources}}" range-key="label" data-id="{{item.id}}" bindchange="assignOcrSource"><view class="source-picker">选择属性来源 ›</view></picker>
+            </view>
+          </view>
+          <view wx:if="{{equipmentConfig.hasDragon}}" class="effect-card">
+            <view class="section-heading">龙啸系列变装</view>
+            <picker range="{{dragonOptions}}" range-key="label" value="{{dragonIndex}}" bindchange="chooseDragonTier" disabled="{{equipmentSaving || recognizing}}" aria-label="选择龙啸系列等级"><view class="effect-select"><text>{{dragonOptions[dragonIndex].label}}</text><text class="effect-select-arrow">⌄</text></view></picker>
+            <text class="section-hint">{{dragonDescription}}</text>
+          </view>
+          <view wx:for="{{equipmentSections}}" wx:for-item="section" wx:key="key" id="equipment-section-{{section.key}}" class="equipment-section">
+            <view class="section-header">
+              <text class="section-heading">{{section.key === 'spiritTransform' && equipmentConfig.hasBazhe ? '灵变 / 霸者系列' : (section.key === 'spirit' && equipmentConfig.key === 'ring' ? '戒指灵' : section.label)}}</text>
+              <switch wx:if="{{section.key !== 'body' && !section.usesPreset && !(section.key === 'appearance' && equipmentConfig.hasDarkMight)}}" checked="{{section.enabled}}" data-section="{{section.key}}" bindchange="toggleEquipmentSection" color="#24584c" disabled="{{equipmentSaving || recognizing}}" />
+            </view>
+            <picker wx:if="{{section.key === 'spiritTransform' && equipmentConfig.hasBazhe}}" range="{{faceOptions}}" range-key="label" value="{{faceIndex}}" bindchange="chooseFaceMode" disabled="{{equipmentSaving || recognizing}}" aria-label="选择灵变或霸者系列等级"><view class="effect-select"><text>{{faceOptions[faceIndex].label}}</text><text class="effect-select-arrow">⌄</text></view></picker>
+            <radio-group wx:if="{{section.key === 'appearance' && equipmentConfig.hasDarkMight}}" class="face-mode" bindchange="chooseWeaponMode">
+              <label><radio value="none" checked="{{weaponMode === 'none'}}" disabled="{{equipmentSaving || recognizing}}" color="#24584c" />无</label>
+              <label><radio value="custom" checked="{{weaponMode === 'custom'}}" disabled="{{equipmentSaving || recognizing}}" color="#24584c" />普通变装</label>
+              <label><radio value="darkMight" checked="{{weaponMode === 'darkMight'}}" disabled="{{equipmentSaving || recognizing}}" color="#24584c" />极暗黑威武</label>
+            </radio-group>
+            <view wx:if="{{section.disabledByBazhe}}" class="effect-description">{{bazheDescription}}</view>
+            <view wx:elif="{{section.disabledByDarkMight}}" class="effect-description">力量 +460，智慧 +460；力量、智慧、敏捷、体质、精神 +30%。</view>
+            <view wx:elif="{{section.usesPreset}}" class="source-preset-card">
+              <picker range="{{section.key === 'spiritTransform' ? transformOptions : ringOptions}}" range-key="label" value="{{section.key === 'spiritTransform' ? transformIndex : ringIndex}}" data-section="{{section.key}}" bindchange="chooseSourcePreset" disabled="{{equipmentSaving || recognizing}}" aria-label="{{'选择' + section.label + '预设'}}"><view class="effect-select"><text>{{section.key === 'spiritTransform' ? transformLabel : ringLabel}}</text><text class="effect-select-arrow">⌄</text></view></picker>
+              <block wx:if="{{section.key === 'spirit' && ringPresetReady}}">
+                <view class="ring-soul-toggle"><text>真*戒魄</text><switch checked="{{ringTrueSoul}}" bindchange="toggleRingTrueSoul" color="#24584c" disabled="{{equipmentSaving || recognizing}}" aria-label="真戒魄" /></view>
+                <radio-group wx:if="{{ringBranches.length}}" class="ring-branch-options" bindchange="chooseRingBranch">
+                  <label wx:for="{{ringBranches}}" wx:for-item="branch" wx:key="key"><radio value="{{branch.key}}" checked="{{ringBranch === branch.key}}" disabled="{{equipmentSaving || recognizing}}" color="#24584c" />{{branch.label}}</label>
+                </radio-group>
+                <text wx:if="{{ringMovement}}" class="section-hint">真*戒魄移动速度 +{{ringMovement}}%（当前仅展示，暂不计入总属性）</text>
+              </block>
+              <block wx:if="{{section.enabled}}">
+                <text wx:if="{{!section.selection && section.fields.length}}" class="section-hint">保留原有输入；选择预设会替换本来源，其他来源不变。</text>
+                <view wx:for="{{section.fields}}" wx:for-item="field" wx:key="key" class="preset-stat-row"><text>{{field.label}}</text><text>+{{field.value}}</text></view>
+              </block>
+            </view>
+            <block wx:elif="{{section.enabled}}">
+              <text wx:if="{{!section.fields.length}}" class="empty-section">添加装备上显示的属性，未出现的属性无需录入。</text>
+              <view wx:for="{{section.fields}}" wx:for-item="field" wx:key="key" id="equip-{{section.key}}-{{field.key}}" class="equipment-field-row">
+                <view class="equipment-field-label"><text>{{field.label}}</text><text wx:if="{{field.legacy}}" class="legacy-field-note">原有词条</text></view>
+                <input class="equipment-number" type="digit" value="{{field.value}}" placeholder="填写数值" data-section="{{section.key}}" data-key="{{field.key}}" data-target="equip-{{section.key}}-{{field.key}}" bindinput="onEquipmentField" bindfocus="onEquipmentFocus" bindkeyboardheightchange="onEquipmentKeyboard" adjust-position="{{false}}" cursor-spacing="20" disabled="{{equipmentSaving || recognizing}}" maxlength="20" aria-label="{{section.label}}的{{field.label}}" />
+                <button class="remove-field" data-section="{{section.key}}" data-key="{{field.key}}" bindtap="removeEquipmentField" disabled="{{equipmentSaving || recognizing}}" aria-label="移除{{field.label}}">×</button>
+              </view>
+              <picker wx:if="{{section.available.length}}" range="{{section.available}}" range-key="label" data-section="{{section.key}}" bindchange="addEquipmentField" disabled="{{equipmentSaving || recognizing}}"><view class="add-attribute">＋ 添加{{section.label}}属性</view></picker>
+              <view wx:if="{{section.key === 'body' && bodyReferenceRows.length}}" class="body-reference">
+                <text class="section-hint">原图补充词条（暂不计入预览）</text>
+                <view wx:for="{{bodyReferenceRows}}" wx:for-item="reference" wx:key="key">{{reference.label}} {{reference.value}}{{reference.unit}}</view>
+              </view>
+            </block>
+            <view wx:if="{{section.spiritBonus}}" class="effect-description spirit-bonus">
+              <view>灵属性达标奖励：最大生命 +{{section.spiritBonus.hp}}</view>
+              <text class="section-hint">移动速度 +{{section.spiritBonus.movementSpeedPercent}}%（当前仅展示，暂不计入总属性）</text>
+            </view>
+          </view>
+          <view wx:if="{{equipmentConfig.hasSoul}}" class="equipment-section">
+            <view class="section-heading">名器之魂</view>
+            <text class="section-hint">录入本件的百分比；移动速度暂不计算</text>
+            <view wx:for="{{equipmentSouls}}" wx:key="key" class="equipment-field-row">
+              <text class="equipment-field-label">{{item.label}}</text>
+              <input class="equipment-number" type="digit" value="{{item.value}}" placeholder="百分比" data-key="{{item.key}}" bindinput="onSoulField" bindkeyboardheightchange="onEquipmentKeyboard" adjust-position="{{false}}" disabled="{{equipmentSaving || recognizing}}" maxlength="12" aria-label="{{item.label}}百分比" /><text class="percent-unit">%</text>
+              <button class="remove-field" data-key="{{item.key}}" bindtap="removeSoulField" disabled="{{equipmentSaving || recognizing}}" aria-label="移除{{item.label}}">×</button>
+            </view>
+            <picker wx:if="{{availableSouls.length}}" range="{{availableSouls}}" range-key="label" bindchange="addSoulField" disabled="{{equipmentSaving || recognizing}}"><view class="add-attribute">＋ 添加名器之魂加成</view></picker>
+          </view>
+          <view id="equipment-impact" class="impact-card">
+            <view class="section-heading">穿戴本件的实际提升</view>
+            <text class="section-hint">与本部位留空相比，已计入当前其他装备的加成</text>
+            <block wx:if="{{equipmentCanSave}}">
+              <view wx:if="{{!equipmentHasChanges}}" class="empty-impact">当前录入的词条未改变面板数值。</view>
+              <view class="impact-table-heading"><text>属性</text><text>本件提升</text><text>穿戴后</text></view>
+              <view wx:for="{{showAllImpacts ? equipmentAllImpactRows : equipmentImpactRows}}" wx:key="key" class="impact-row">
+                <text>{{item.label}}</text><text class="{{item.delta > 0 ? 'delta-positive' : (item.delta < 0 ? 'delta-negative' : '')}}">{{item.sign}}{{item.delta}}</text><text>{{item.after}}</text>
+              </view>
+              <button class="show-all-impact" bindtap="toggleAllImpacts">{{showAllImpacts ? '只看变化属性' : '查看全部属性'}}</button>
+            </block>
+            <view wx:else class="empty-impact">{{ocrPending.length ? '先确认上方识别词条的来源，即可计算提升。' : '填完已添加的属性数值后，即时显示本件提升。'}}</view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer equipment-modal-footer">
+        <view wx:if="{{equipmentCanSave && quickImpacts.length}}" class="quick-impacts"><text wx:for="{{quickImpacts}}" wx:key="key">{{item.label}} <text class="{{item.delta > 0 ? 'delta-positive' : 'delta-negative'}}">{{item.sign}}{{item.delta}}</text></text></view>
+        <text wx:if="{{equipmentError}}" class="save-error" role="alert">{{equipmentError}}</text>
+        <text wx:if="{{recognitionReview}}" class="recognition-review">请核实装备属性信息</text>
+        <text wx:else class="form-progress">手动录入同样可以保存 · 数值为 0 时请填 0</text>
+        <view class="equipment-footer-buttons">
+          <button wx:if="{{equipmentSaved}}" class="unequip-button" bindtap="removeEquipment" disabled="{{equipmentSaving || recognizing}}">取下装备</button>
+          <button class="confirm-button" bindtap="confirmEquipment" loading="{{equipmentSaving}}" disabled="{{!equipmentCanSave || equipmentSaving || recognizing}}">{{equipmentSaving ? '正在保存' : '确认装备属性'}}</button>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{equipmentHelpOpen && equipmentOpen}}" class="modal-overlay standards-overlay" catchtouchmove="stopTouchMove">
+    <view class="modal screenshot-standard" role="dialog" aria-modal="true" aria-label="装备截图标准">
+      <view class="modal-header"><view class="modal-title">装备截图标准</view><button class="close-button" bindtap="closeEquipmentHelp" aria-label="关闭截图标准">×</button></view>
+      <view class="upload-standard-guidance"><text>{{uploadImageGuidance}}</text></view>
+    </view>
+  </view>
+
 </view>

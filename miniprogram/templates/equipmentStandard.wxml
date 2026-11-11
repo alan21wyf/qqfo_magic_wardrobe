@@ -1,0 +1,6 @@
+<view class="equipment-standard-page">
+  <view class="standard-guidance"><text>{{uploadImageGuidance}}</text></view>
+  <scroll-view scroll-y class="standard-image-scroll" enhanced show-scrollbar="{{false}}">
+    <image wx:if="{{exampleImage}}" class="standard-example-image" src="{{exampleImage}}" mode="widthFix" bindtap="previewExampleImage" binderror="onExampleImageError" aria-label="{{exampleLabel}}" />
+  </scroll-view>
+</view>

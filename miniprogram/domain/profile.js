@@ -1,10 +1,10 @@
 // Stable keys are shared by forms, saved profiles and future OCR field mapping.
 const STAT_FIELDS = [
   { key: 'minAttack', label: '最小攻击' },
-  { key: 'maxAttack', label: '最大攻击' },
   { key: 'defense', label: '防御' },
-  { key: 'magicAttack', label: '魔攻' },
+  { key: 'maxAttack', label: '最大攻击' },
   { key: 'hit', label: '命中' },
+  { key: 'magicAttack', label: '魔攻' },
   { key: 'magicDefense', label: '魔防' },
   { key: 'strength', label: '力量' },
   { key: 'constitution', label: '体质' },
@@ -35,6 +35,8 @@ const RIGHT_SLOTS = [
   { key: 'backpack', label: '背包' },
   { key: 'ring', label: '戒指' },
 ];
+const BADGES = ['英勇徽章', '信仰徽章', '忠诚徽章', '卓越徽章', '睿智徽章', '狂野徽章']
+  .map((label, index) => ({ key: 'badge' + (index + 1), n: index + 1, label }));
 
 function isProfession(key) {
   return PROFESSIONS.some((item) => item.key === key);
@@ -57,6 +59,16 @@ function validateStats(values) {
     stats[field.key] = value;
   }
   return stats;
+}
+
+// A measured naked MP value belongs to one profession's naked spirit value.
+// Ignore stale or malformed calibration instead of reusing it after spirit changes.
+function normalizeManaCalibration(value, stats) {
+  if (!value || !stats) return null;
+  const mp = parseNumericValue(value.mp);
+  const spirit = parseNumericValue(value.spirit);
+  if (mp === null || !Number.isSafeInteger(mp) || spirit === null || spirit !== stats.spirit) return null;
+  return { mp, spirit };
 }
 
 function createDraft(stats) {
@@ -87,6 +99,6 @@ function statRows(stats, start, end) {
 }
 
 module.exports = {
-  STAT_FIELDS, PROFESSIONS, LEFT_SLOTS, RIGHT_SLOTS,
-  isProfession, parseNumericValue, validateStats, createDraft, draftToStats, statRows,
+  STAT_FIELDS, PROFESSIONS, LEFT_SLOTS, RIGHT_SLOTS, BADGES,
+  isProfession, parseNumericValue, validateStats, normalizeManaCalibration, createDraft, draftToStats, statRows,
 };
