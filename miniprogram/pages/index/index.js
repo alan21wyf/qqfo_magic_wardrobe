@@ -1,6 +1,9 @@
 Page({
-  data: { opening: false },
+  data: { opening: false, artworkFailed: false },
   onShow() { this.setData({ opening: false }); },
+  onArtworkError() {
+    if (!this.data.artworkFailed) this.setData({ artworkFailed: true });
+  },
   openBuildPreview() {
     if (this.data.opening) return;
     this.setData({ opening: true });
@@ -11,8 +14,5 @@ Page({
         wx.showToast({ title: '页面暂时无法打开，请重试', icon: 'none' });
       },
     });
-  },
-  showComingSoon(event) {
-    wx.showToast({ title: event.currentTarget.dataset.label + '即将开放', icon: 'none' });
   },
 });

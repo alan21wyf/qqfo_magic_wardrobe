@@ -1,17 +1,32 @@
-<view class="home-page">
-  <image class="home-hero" src="/images/wardrobe/home-hero.jpg" mode="widthFix" aria-label="天都魔法衣橱与整理领带的火鸟" />
+<view class="home-page {{artworkFailed ? 'artwork-failed' : 'artwork-ready'}}">
+  <view class="home-hero" role="img" aria-label="天都云海中的魔法衣橱，火鸟正在整理领带">
+    <image wx:if="{{!artworkFailed}}" class="home-art hero-art" src="/images/wardrobe/home-artwork.jpg" mode="scaleToFill" aria-hidden="{{true}}" binderror="onArtworkError" />
+    <image wx:else class="hero-fallback" src="/images/wardrobe/home-hero.jpg" mode="aspectFill" aria-hidden="{{true}}" />
+  </view>
   <view class="home-actions">
     <button class="entry entry-primary" bindtap="openBuildPreview" hover-class="entry-pressed" aria-label="装备属性试穿">
-      <image class="entry-icon" src="/images/wardrobe/helmet.jpg" mode="aspectFit" />
-      <text class="entry-label">装备属性试穿</text><text class="entry-arrow">›</text>
+      <text class="entry-label">装备属性试穿</text><text class="entry-arrow" aria-hidden="{{true}}">›</text>
+      <image wx:if="{{!artworkFailed}}" class="home-art primary-art" src="/images/wardrobe/home-artwork.jpg" mode="scaleToFill" aria-hidden="{{true}}" binderror="onArtworkError" />
     </button>
-    <button class="entry entry-secondary" bindtap="showComingSoon" data-label="时装试穿" hover-class="entry-pressed">
-      <image class="entry-icon" src="/images/wardrobe/robe.jpg" mode="aspectFit" />
-      <text class="entry-label">时装试穿</text><text class="entry-arrow">›</text>
+    <button class="entry entry-secondary" disabled="{{true}}" aria-label="时装试穿，即将推出">
+      <text class="entry-label">时装试穿<text class="coming-soon">即将推出</text></text>
+      <image wx:if="{{!artworkFailed}}" class="home-art secondary-art" src="/images/wardrobe/home-artwork.jpg" mode="scaleToFill" aria-hidden="{{true}}" binderror="onArtworkError" />
     </button>
     <view class="secondary-actions">
-      <button class="small-entry mbti-entry" bindtap="showComingSoon" data-label="幻想MBTI测试" hover-class="entry-pressed">幻想MBTI测试</button>
-      <button class="small-entry placeholder-entry" disabled>敬请期待</button>
+      <button class="small-entry mbti-entry" disabled="{{true}}" aria-label="幻想MBTI，即将推出">
+        <text>幻想MBTI<text class="coming-soon">即将推出</text></text>
+        <image wx:if="{{!artworkFailed}}" class="home-art mbti-art" src="/images/wardrobe/home-artwork.jpg" mode="scaleToFill" aria-hidden="{{true}}" binderror="onArtworkError" />
+      </button>
+      <button class="small-entry placeholder-entry" disabled="{{true}}" aria-label="敬请期待">
+        <text>敬请期待</text>
+        <image wx:if="{{!artworkFailed}}" class="home-art placeholder-art" src="/images/wardrobe/home-artwork.jpg" mode="scaleToFill" aria-hidden="{{true}}" binderror="onArtworkError" />
+      </button>
     </view>
+  </view>
+  <view class="alan-signature" aria-label="幻想不散场，献给每一位幻想玩家。Alan">
+    <text class="signature-caption">幻想不散场</text>
+    <text class="signature-note">献给每一位幻想玩家</text>
+    <text class="signature-name">Alan</text>
+    <image wx:if="{{!artworkFailed}}" class="home-art footer-art" src="/images/wardrobe/home-artwork.jpg" mode="scaleToFill" aria-hidden="{{true}}" binderror="onArtworkError" />
   </view>
 </view>
